@@ -1,4 +1,4 @@
-﻿// 1. Bilingual EN / FR Dictionary
+// 1. Bilingual EN / FR Dictionary
 const translations = {
     en: {
         nav_labs: "Labs",
