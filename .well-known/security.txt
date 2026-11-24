@@ -1,4 +1,4 @@
-﻿Contact: mailto:achrafnassereddine6@gmail.com
+Contact: mailto:achrafnassereddine6@gmail.com
 Expires: 2027-11-24T23:59:59Z
 Preferred-Languages: en, fr, ar
-Canonical: https://achrafnassereddine.vercel.app/.well-known/security.txt
+Canonical: https://achraf-sec.vercel.app/.well-known/security.txt
