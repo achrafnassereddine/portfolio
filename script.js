@@ -64,7 +64,7 @@ const translations = {
         ext3_desc: "Arabic (Native), French (Fluent — spoken & written), English (Fluent — spoken & written).",
         footer_title: "Open for Summer 2027 SOC & DFIR internships.",
         footer_sub: "Casablanca & Rabat, Morocco — On-site or Hybrid",
-        kbd_hint: "Keys: [1–5] Navigate · [L] EN/FR",
+        kbd_hint: "Keys: [1–5] Navigate · [L] EN/FR · [Ctrl+K] Tools · [`] Shell",
         back_top: "Back to top ↑",
         toast_copied: "Email copied to clipboard",
         toast_lang: "Language switched to English"
@@ -133,7 +133,7 @@ const translations = {
         ext3_desc: "Arabe (Langue maternelle), Français (Courant — écrit et parlé), Anglais (Courant — écrit et parlé).",
         footer_title: "Disponible pour un stage d'été 2027 en SOC & DFIR.",
         footer_sub: "Casablanca & Rabat, Maroc — Présentiel ou Hybride",
-        kbd_hint: "Touches : [1–5] Navigation · [L] EN/FR",
+        kbd_hint: "Touches : [1–5] Naviguer · [L] EN/FR · [Ctrl+K] Outils · [`] Shell",
         back_top: "Haut de page ↑",
         toast_copied: "Adresse email copiée",
         toast_lang: "Langue passée en Français"
