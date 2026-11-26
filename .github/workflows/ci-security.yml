@@ -1,0 +1,35 @@
+name: Portfolio Security & Integrity Gate
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  secret-and-config-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan repository for leaked secrets (Gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate vercel.json & package.json syntax
+        run: |
+          jq empty vercel.json
+          jq empty package.json
+
+      - name: Verify security.txt & sitemap presence
+        run: |
+          test -f .well-known/security.txt
+          test -f sitemap.xml
+          test -f robots.txt
