@@ -848,3 +848,158 @@ Scope: Single compromised endpoint; no outbound SMB/WinRM lateral hits observed.
 
     renderStage();
 })();
+
+// 13. Interactive SOC Terminal & Mini-CTF Easter Egg (Backtick ` or Navbar Red Dot)
+(function initSocTerminalEasterEgg() {
+    const fs = {
+        'readme.txt': 'Welcome to achraf-1337 SOC Lab Shell.\nAn anomalous outbound beacon was flagged on host WIN-WORKSTATION-04.\nInspect hidden files in /home/analyst (try: ls -la) and recover the flag.',
+        '.auth.log': 'Nov 26 03:14:09 sshd[4821]: Failed password for invalid user admin from 185.220.101.44 port 51922\nNov 26 03:14:15 sshd[4825]: Accepted publickey for analyst from 10.20.14.5 port 49812\nNov 26 03:15:02 auditd[912]: EXECVE cmd="echo RkxBR3sxMzM3X1MwQ19USFJFQVRfSFVOVEVSfQ== | base64 -d"',
+        'wazuh_alert.json': '{\n  "rule_id": "100210",\n  "level": 13,\n  "mitre": "T1003.001",\n  "note": "Check .auth.log for the encoded payload left by the operator."\n}'
+    };
+
+    const history = [];
+    let histIdx = -1;
+
+    function openTerminal() {
+        const backdrop = document.querySelector('.sec-modal-backdrop');
+        const modalBox = document.getElementById('secModalBox');
+        const modalHeading = document.getElementById('secModalHeading');
+        const modalBody = document.getElementById('secModalBody');
+        if (!backdrop || !modalBox || !modalHeading || !modalBody) return;
+
+        modalBox.classList.remove('is-wide');
+        modalHeading.textContent = 'SOC-LAB SHELL // PRESS ` OR ESC TO EXIT';
+        modalBody.innerHTML = `
+            <div class="soc-term-window">
+                <div class="soc-term-output" id="socTermOut"></div>
+                <div class="soc-term-input-row">
+                    <span class="soc-term-prompt">analyst@achraf-1337:~$</span>
+                    <input type="text" class="soc-term-input" id="socTermIn" autocomplete="off" spellcheck="false" placeholder="Type 'help' to begin...">
+                </div>
+            </div>
+        `;
+        backdrop.classList.add('is-open');
+
+        const out = document.getElementById('socTermOut');
+        const inp = document.getElementById('socTermIn');
+        inp.focus();
+
+        function printLine(text, cls = '') {
+            const div = document.createElement('div');
+            if (cls) div.className = cls;
+            div.textContent = text;
+            out.appendChild(div);
+            out.scrollTop = out.scrollHeight;
+        }
+
+        printLine('Achraf Nasser-Eddine // Interactive DFIR & Threat Hunting Shell v1.3.37', 'soc-term-line-accent');
+        printLine("Type 'help' for available commands or 'ls -la' to inspect lab artifacts.\n");
+
+        function runCmd(raw) {
+            const trimmed = raw.trim();
+            if (!trimmed) return;
+            history.push(trimmed);
+            histIdx = history.length;
+            printLine(`analyst@achraf-1337:~$ ${trimmed}`, 'soc-term-line-cmd');
+
+            const [cmd, ...args] = trimmed.split(/\s+/);
+            const argStr = args.join(' ');
+
+            switch (cmd.toLowerCase()) {
+                case 'help':
+                    printLine('Commands: help, whoami, ls, ls -la, cat <file>, base64 -d <str>, nmap, pgp, submit <FLAG{...}>, clear');
+                    break;
+                case 'whoami':
+                    printLine('Achraf Nasser-Eddine — Cybersecurity Engineering Student (EMSI Casablanca)\nFocus: SOC Operations, Threat Hunting, DFIR, DevSecOps & GRC');
+                    break;
+                case 'ls':
+                    if (argStr.includes('-a')) {
+                        printLine('drwxr-xr-x  .auth.log   readme.txt   wazuh_alert.json');
+                    } else {
+                        printLine('readme.txt   wazuh_alert.json');
+                    }
+                    break;
+                case 'cat':
+                    if (!argStr) {
+                        printLine('Usage: cat <filename>');
+                    } else if (fs[argStr]) {
+                        printLine(fs[argStr]);
+                    } else {
+                        printLine(`cat: ${argStr}: No such file or directory`);
+                    }
+                    break;
+                case 'base64':
+                    if (args[0] === '-d' && args[1]) {
+                        try {
+                            printLine(atob(args[1]), 'soc-term-line-ok');
+                        } catch {
+                            printLine('base64: invalid input');
+                        }
+                    } else {
+                        printLine('Usage: base64 -d <base64_string>');
+                    }
+                    break;
+                case 'nmap':
+                    printLine('Starting Nmap 7.95 scan against achraf-1337.vercel.app...\nPORT    STATE SERVICE  VERSION\n443/tcp open  https    Vercel Edge (TLS 1.3 + HSTS Preload + CSP A+)');
+                    break;
+                case 'pgp':
+                    printLine('Key ID: DA9AA69CF510C107 (Ed25519)\nEndpoint: https://achraf-1337.vercel.app/api/pgp');
+                    break;
+                case 'submit':
+                    if (argStr === 'FLAG{1337_S0C_THREAT_HUNTER}') {
+                        printLine('[ACCESS GRANTED] Flag verified! You solved the portfolio mini-CTF.\nReady for Summer 2027 SOC / DFIR investigations: achrafnassereddine6@gmail.com', 'soc-term-line-ok');
+                    } else {
+                        printLine('[DENIED] Invalid flag format or value. Inspect .auth.log and decode the Base64 string.', 'soc-term-line-accent');
+                    }
+                    break;
+                case 'clear':
+                    out.innerHTML = '';
+                    break;
+                default:
+                    printLine(`${cmd}: command not found. Type 'help' for supported commands.`);
+            }
+        }
+
+        inp.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                runCmd(inp.value);
+                inp.value = '';
+            } else if (e.key === 'ArrowUp' && histIdx > 0) {
+                histIdx--;
+                inp.value = history[histIdx];
+            } else if (e.key === 'ArrowDown') {
+                if (histIdx < history.length - 1) {
+                    histIdx++;
+                    inp.value = history[histIdx];
+                } else {
+                    histIdx = history.length;
+                    inp.value = '';
+                }
+            }
+        });
+    }
+
+    // Trigger 1: Backtick (`) key anywhere outside form inputs
+    document.addEventListener('keydown', (e) => {
+        if (e.key === '`' && !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) {
+            e.preventDefault();
+            const backdrop = document.querySelector('.sec-modal-backdrop');
+            if (backdrop?.classList.contains('is-open')) {
+                backdrop.classList.remove('is-open');
+            } else {
+                openTerminal();
+            }
+        }
+    });
+
+    // Trigger 2: Click the pulsing red dot in the navbar brand
+    const brandDot = document.querySelector('.nav .brand .dot');
+    if (brandDot) {
+        brandDot.title = 'Open SOC Shell (`)';
+        brandDot.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            openTerminal();
+        });
+    }
+})();

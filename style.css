@@ -1171,3 +1171,63 @@ body.lang-fading [data-i18n] { opacity: 0.15; }
 .triage-next.visible {
     display: inline-block;
 }
+
+/* Hidden Interactive SOC Terminal & Mini-CTF Easter Egg */
+.brand .dot {
+    cursor: pointer;
+}
+
+.soc-term-window {
+    background: #0d0d0d;
+    border: 1px solid #262626;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: #d4d4d4;
+    overflow: hidden;
+}
+
+.soc-term-output {
+    padding: 14px;
+    max-height: 340px;
+    overflow-y: auto;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.soc-term-line-cmd {
+    color: #eaeaea;
+}
+
+.soc-term-line-accent {
+    color: #e30613;
+}
+
+.soc-term-line-ok {
+    color: #3fb950;
+}
+
+.soc-term-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-top: 1px solid #222222;
+    background: #121212;
+}
+
+.soc-term-prompt {
+    color: #e30613;
+    white-space: nowrap;
+}
+
+.soc-term-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #eaeaea;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    outline: none;
+}
