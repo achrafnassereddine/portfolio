@@ -974,3 +974,85 @@ body.lang-fading [data-i18n] { opacity: 0.15; }
     max-height: 76vh;
     cursor: default;
 }
+
+/* MITRE ATT&CK Filter Bar & Detection Rule Artifacts */
+.mitre-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 18px;
+}
+
+.mitre-pill {
+    background: #161616;
+    border: 1px solid #262626;
+    color: #8a8a8a;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    padding: 5px 11px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: border-color 0.18s ease, color 0.18s ease;
+}
+
+.mitre-pill:hover,
+.mitre-pill.active {
+    border-color: #e30613;
+    color: #eaeaea;
+}
+
+.repo-item.is-filtered-out {
+    display: none;
+}
+
+.artifact-box {
+    margin-top: 14px;
+    border: 1px solid #262626;
+    border-radius: 6px;
+    background: #101010;
+    overflow: hidden;
+}
+
+.artifact-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: #161616;
+    border-bottom: 1px solid #262626;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: #8a8a8a;
+}
+
+.artifact-copy {
+    background: transparent;
+    border: 1px solid #2c2c2c;
+    color: #eaeaea;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.artifact-copy:hover {
+    border-color: #e30613;
+}
+
+.artifact-code {
+    margin: 0;
+    padding: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.74rem;
+    line-height: 1.55;
+    color: #d4d4d4;
+    overflow-x: auto;
+    white-space: pre;
+}
+
+.gh-telemetry {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: #8a8a8a;
+}

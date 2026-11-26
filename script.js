@@ -532,15 +532,55 @@ window.addEventListener('keydown', (e) => {
         }
     }
 
+    function transformIoc(raw) {
+        const s = raw.trim();
+        if (!s) return 'Paste a URL, IPv4, or domain to defang (or paste a defanged IOC to refang).';
+        const isDefanged = /hxxps?:\/\/|\[\.\]|\[:\]/i.test(s);
+        if (isDefanged) {
+            return '[REFANGED]\n' + s
+                .replace(/hxxps:\/\//gi, 'https://')
+                .replace(/hxxp:\/\//gi, 'http://')
+                .replace(/\[\.\]/g, '.')
+                .replace(/\[:\]/g, ':');
+        }
+        return '[DEFANGED]\n' + s
+            .replace(/https:\/\//gi, 'hxxps://')
+            .replace(/http:\/\//gi, 'hxxp://')
+            .replace(/\./g, '[.]');
+    }
+
+    function decodeBase64Smart(raw) {
+        const clean = raw.trim().replace(/\s+/g, '');
+        if (!clean) return 'Paste Base64 or PowerShell -EncodedCommand payload to decode locally.';
+        try {
+            const bin = atob(clean);
+            // Detect UTF-16LE (common in PowerShell -EncodedCommand where every 2nd byte is 0x00)
+            let zeroCount = 0;
+            for (let i = 1; i < bin.length; i += 2) {
+                if (bin.charCodeAt(i) === 0) zeroCount++;
+            }
+            if (bin.length >= 4 && zeroCount > bin.length / 4) {
+                const bytes = new Uint8Array(bin.length);
+                for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+                return '[UTF-16LE / PowerShell Decoded]\n' + new TextDecoder('utf-16le').decode(bytes);
+            }
+            return '[UTF-8 / ASCII Decoded]\n' + bin;
+        } catch {
+            return 'Invalid Base64 input.';
+        }
+    }
+
     function openAnalystPalette() {
         modalBox.classList.remove('is-wide');
         modalHeading.textContent = 'CLIENT-SIDE ANALYST UTILITY // CTRL+K';
         modalBody.innerHTML = `
             <div class="sec-tabs">
-                <button type="button" class="sec-tab active" data-mode="sha256">SHA-256 Hash</button>
-                <button type="button" class="sec-tab" data-mode="jwt">JWT Inspector</button>
+                <button type="button" class="sec-tab active" data-mode="sha256">SHA-256</button>
+                <button type="button" class="sec-tab" data-mode="jwt">JWT</button>
+                <button type="button" class="sec-tab" data-mode="ioc">IOC Defang</button>
+                <button type="button" class="sec-tab" data-mode="b64">Base64 / PS</button>
             </div>
-            <textarea class="sec-textarea" id="secInput" placeholder="Enter IOC string, artifact text, or paste a JWT token..."></textarea>
+            <textarea class="sec-textarea" id="secInput" placeholder="Enter IOC, artifact text, JWT, or Base64 payload..."></textarea>
             <div class="sec-output" id="secOutput">e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</div>
         `;
         backdrop.classList.add('is-open');
@@ -553,8 +593,12 @@ window.addEventListener('keydown', (e) => {
         async function updateOutput() {
             if (mode === 'sha256') {
                 output.textContent = await sha256Hex(input.value);
-            } else {
+            } else if (mode === 'jwt') {
                 output.textContent = input.value.trim() ? decodeJwt(input.value) : 'Paste a JWT token above to inspect header & claims locally.';
+            } else if (mode === 'ioc') {
+                output.textContent = transformIoc(input.value);
+            } else {
+                output.textContent = decodeBase64Smart(input.value);
             }
         }
 
@@ -582,4 +626,124 @@ window.addEventListener('keydown', (e) => {
             closeModal();
         }
     });
+})();
+
+// 11. MITRE ATT&CK Filter, Detection Rule Artifacts, Enhanced Ctrl+K & GitHub Telemetry
+(function initDetectionEnhancements() {
+    // A. MITRE ATT&CK Tactic Filter Bar above .repo-list
+    const repoList = document.querySelector('.repo-list');
+    const repoItems = Array.from(document.querySelectorAll('.repo-list .repo-item'));
+    const tacticMap = [
+        ['all', 'T1003', 'T1059', 'DFIR'],
+        ['all', 'T1195', 'Supply Chain'],
+        ['all', 'DFIR', 'HA'],
+        ['all', 'Supply Chain', 'AppSec']
+    ];
+
+    if (repoList && repoItems.length) {
+        repoItems.forEach((item, idx) => {
+            item.dataset.tactics = (tacticMap[idx] || ['all']).join(',');
+        });
+
+        const filterBar = document.createElement('div');
+        filterBar.className = 'mitre-filter-bar';
+        const filters = [
+            { key: 'all', label: 'ALL LABS (04)' },
+            { key: 'T1003', label: 'T1003 // CREDENTIAL ACCESS' },
+            { key: 'T1059', label: 'T1059 // EXECUTION' },
+            { key: 'T1195', label: 'T1195 // SUPPLY CHAIN' },
+            { key: 'DFIR', label: 'DFIR & INFRASTRUCTURE' }
+        ];
+
+        filters.forEach((f, i) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'mitre-pill' + (i === 0 ? ' active' : '');
+            btn.textContent = f.label;
+            btn.addEventListener('click', () => {
+                filterBar.querySelectorAll('.mitre-pill').forEach((b) => b.classList.remove('active'));
+                btn.classList.add('active');
+                repoItems.forEach((item) => {
+                    const list = (item.dataset.tactics || '').split(',');
+                    item.classList.toggle('is-filtered-out', !list.includes(f.key));
+                });
+            });
+            filterBar.appendChild(btn);
+        });
+
+        repoList.parentNode.insertBefore(filterBar, repoList);
+    }
+
+    // B. Copyable Detection & CI Artifacts inside Lab 01 & Lab 02
+    const artifacts = [
+        {
+            index: 0,
+            label: 'WAZUH CUSTOM RULE + VELOCIRAPTOR VQL // T1003.001 LSASS ACCESS',
+            code: `<rule id="100210" level="13">
+  <if_sid>61612</if_sid>
+  <field name="win.eventdata.targetImage" type="pcre2">\\\\lsass\\.exe$</field>
+  <field name="win.eventdata.grantedAccess" type="pcre2">0x1010|0x1410|0x1438</field>
+  <description>Sysmon Event 10: Suspicious LSASS Memory Access (MITRE T1003.001)</description>
+  <mitre><id>T1003.001</id></mitre>
+</rule>
+
+-- Velociraptor VQL Live Triage Hunt
+SELECT System.Computer AS Host, EventData.SourceImage AS Process,
+       EventData.GrantedAccess AS AccessMask
+FROM parse_evtx(filename="C:/Windows/System32/winevt/Logs/Microsoft-Windows-Sysmon%4Operational.evtx")
+WHERE System.EventID.Value = 10 AND EventData.TargetImage =~ "lsass.exe"`
+        },
+        {
+            index: 1,
+            label: 'GITHUB ACTIONS SECURITY GATE // TRIVY + COSIGN ATTESTATION',
+            code: `- name: Scan Container Image for Critical CVEs (Trivy)
+  uses: aquasecurity/trivy-action@0.28.0
+  with:
+    image-ref: \${{ env.IMAGE_DIGEST }}
+    severity: CRITICAL,HIGH
+    exit-code: '1'
+
+- name: Sign Verified Image Digest (Sigstore Cosign)
+  run: cosign sign --yes \${{ env.IMAGE_DIGEST }}`
+        }
+    ];
+
+    artifacts.forEach((art) => {
+        const hostBody = repoItems[art.index]?.querySelector('.repo-body');
+        if (!hostBody) return;
+        const box = document.createElement('div');
+        box.className = 'artifact-box';
+        box.innerHTML = `
+            <div class="artifact-head">
+                <span>${art.label}</span>
+                <button type="button" class="artifact-copy">COPY</button>
+            </div>
+            <pre class="artifact-code"></pre>
+        `;
+        box.querySelector('.artifact-code').textContent = art.code;
+        const copyBtn = box.querySelector('.artifact-copy');
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(art.code).then(() => {
+                copyBtn.textContent = 'COPIED';
+                setTimeout(() => { copyBtn.textContent = 'COPY'; }, 1600);
+            });
+        });
+        hostBody.appendChild(box);
+    });
+
+    // C. Fetch Edge-cached /api/stats for footer telemetry
+    const footerBottom = document.querySelector('.footer-bottom .copyright');
+    if (footerBottom) {
+        fetch('/api/stats')
+            .then((r) => (r.ok ? r.json() : null))
+            .then((data) => {
+                if (data && typeof data.public_repos === 'number') {
+                    const span = document.createElement('span');
+                    span.className = 'gh-telemetry';
+                    span.textContent = ` · GitHub: ${data.public_repos} public repos`;
+                    footerBottom.appendChild(span);
+                }
+            })
+            .catch(() => {});
+    }
 })();
