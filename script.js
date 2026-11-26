@@ -456,3 +456,130 @@ window.addEventListener('keydown', (e) => {
     draw();
 })();
 
+
+
+// 10. Architecture Diagram Lightbox & Ctrl+K Analyst Utility (SHA-256 + JWT)
+(function initSecurityModals() {
+    const backdrop = document.createElement('div');
+    backdrop.className = 'sec-modal-backdrop';
+    backdrop.setAttribute('role', 'dialog');
+    backdrop.setAttribute('aria-modal', 'true');
+    backdrop.innerHTML = `
+        <div class="sec-modal-box" id="secModalBox">
+            <div class="sec-modal-header">
+                <div class="sec-modal-title"><span class="sec-modal-dot"></span><span id="secModalHeading">ANALYST UTILITY</span></div>
+                <button type="button" class="sec-modal-close" id="secModalClose">ESC</button>
+            </div>
+            <div id="secModalBody"></div>
+        </div>
+    `;
+    document.body.appendChild(backdrop);
+
+    const modalBox = document.getElementById('secModalBox');
+    const modalHeading = document.getElementById('secModalHeading');
+    const modalBody = document.getElementById('secModalBody');
+    const closeBtn = document.getElementById('secModalClose');
+
+    function closeModal() {
+        backdrop.classList.remove('is-open');
+        modalBox.classList.remove('is-wide');
+        modalBody.innerHTML = '';
+    }
+
+    closeBtn.addEventListener('click', closeModal);
+    backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) closeModal();
+    });
+
+    // Click-to-expand for architecture SVGs
+    document.querySelectorAll('svg').forEach((svg) => {
+        const vb = svg.getAttribute('viewBox');
+        if (!vb) return;
+        const parts = vb.trim().split(/[\s,]+/).map(Number);
+        if (parts.length === 4 && parts[2] >= 300) {
+            svg.addEventListener('click', () => {
+                modalBox.classList.add('is-wide');
+                modalHeading.textContent = 'ARCHITECTURE TELEMETRY VIEW';
+                modalBody.innerHTML = '<div class="sec-lightbox-stage"></div>';
+                const clone = svg.cloneNode(true);
+                modalBody.firstChild.appendChild(clone);
+                backdrop.classList.add('is-open');
+            });
+        }
+    });
+
+    // Ctrl+K / Cmd+K Analyst Utility (SHA-256 Hasher & JWT Decoder)
+    async function sha256Hex(str) {
+        const data = new TextEncoder().encode(str);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        return Array.from(new Uint8Array(hashBuffer))
+            .map((b) => b.toString(16).padStart(2, '0'))
+            .join('');
+    }
+
+    function decodeJwt(token) {
+        const parts = token.trim().split('.');
+        if (parts.length < 2) return 'Invalid JWT format (expected header.payload.signature)';
+        try {
+            const b64Decode = (s) => {
+                const norm = s.replace(/-/g, '+').replace(/_/g, '/');
+                const padded = norm + '='.repeat((4 - (norm.length % 4)) % 4);
+                return JSON.parse(atob(padded));
+            };
+            return JSON.stringify({ header: b64Decode(parts[0]), payload: b64Decode(parts[1]) }, null, 2);
+        } catch {
+            return 'Unable to decode Base64URL JSON segments.';
+        }
+    }
+
+    function openAnalystPalette() {
+        modalBox.classList.remove('is-wide');
+        modalHeading.textContent = 'CLIENT-SIDE ANALYST UTILITY // CTRL+K';
+        modalBody.innerHTML = `
+            <div class="sec-tabs">
+                <button type="button" class="sec-tab active" data-mode="sha256">SHA-256 Hash</button>
+                <button type="button" class="sec-tab" data-mode="jwt">JWT Inspector</button>
+            </div>
+            <textarea class="sec-textarea" id="secInput" placeholder="Enter IOC string, artifact text, or paste a JWT token..."></textarea>
+            <div class="sec-output" id="secOutput">e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</div>
+        `;
+        backdrop.classList.add('is-open');
+
+        let mode = 'sha256';
+        const input = document.getElementById('secInput');
+        const output = document.getElementById('secOutput');
+        input.focus();
+
+        async function updateOutput() {
+            if (mode === 'sha256') {
+                output.textContent = await sha256Hex(input.value);
+            } else {
+                output.textContent = input.value.trim() ? decodeJwt(input.value) : 'Paste a JWT token above to inspect header & claims locally.';
+            }
+        }
+
+        modalBody.querySelectorAll('.sec-tab').forEach((tab) => {
+            tab.addEventListener('click', () => {
+                modalBody.querySelectorAll('.sec-tab').forEach((t) => t.classList.remove('active'));
+                tab.classList.add('active');
+                mode = tab.dataset.mode;
+                updateOutput();
+            });
+        });
+
+        input.addEventListener('input', updateOutput);
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+            e.preventDefault();
+            if (backdrop.classList.contains('is-open')) {
+                closeModal();
+            } else {
+                openAnalystPalette();
+            }
+        } else if (e.key === 'Escape' && backdrop.classList.contains('is-open')) {
+            closeModal();
+        }
+    });
+})();
