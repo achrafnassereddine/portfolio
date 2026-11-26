@@ -1,4 +1,5 @@
 Contact: mailto:achrafnassereddine6@gmail.com
-Expires: 2027-11-24T23:59:59Z
+Encryption: https://achraf-1337.vercel.app/api/pgp
+Expires: 2027-11-26T23:59:59Z
 Preferred-Languages: en, fr, ar
-Canonical: https://achraf-sec.vercel.app/.well-known/security.txt
+Canonical: https://achraf-1337.vercel.app/.well-known/security.txt
