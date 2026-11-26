@@ -1,0 +1,17 @@
+{
+  "name": "Achraf Nasser-Eddine — Cybersecurity Engineer",
+  "short_name": "Achraf 1337",
+  "description": "SOC, Threat Hunting, DFIR, DevSecOps & GRC Portfolio — Casablanca, Morocco.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#141414",
+  "theme_color": "#141414",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

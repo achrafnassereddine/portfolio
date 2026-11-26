@@ -747,3 +747,104 @@ WHERE System.EventID.Value = 10 AND EventData.TargetImage =~ "lsass.exe"`
             .catch(() => {});
     }
 })();
+
+// 12. Service Worker Registration & Interactive 3-Step SOC Alert Triage Simulator
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+    });
+}
+
+(function initSocTriageSimulator() {
+    const repoList = document.querySelector('.repo-list');
+    if (!repoList) return;
+
+    const stages = [
+        {
+            telemetry: `[WAZUH ALERT // RULE 100210 // LEVEL 13]
+Host: WIN-WORKSTATION-04 (10.20.14.32)
+Event: Sysmon Event ID 10 (ProcessAccess)
+SourceImage: C:\\Users\\Public\\svchost_update.exe
+TargetImage: C:\\Windows\\System32\\lsass.exe
+GrantedAccess: 0x1010 (PROCESS_VM_READ | PROCESS_QUERY_LIMITED_INFORMATION)`,
+            question: 'Stage 1 — Initial Triage: What does this telemetry sequence indicate?',
+            options: [
+                { text: 'A) Routine Windows Defender signature update scanning LSASS', correct: false, note: 'Defender runs from MsMpEng.exe in ProgramData/Program Files, never C:\\Users\\Public\\svchost_update.exe.' },
+                { text: 'B) Masqueraded binary attempting LSASS credential memory read (MITRE T1003.001)', correct: true, note: 'Correct. Non-standard path + svchost masquerading + 0x1010 handle to lsass.exe is high-confidence credential dumping.' },
+                { text: 'C) Normal RDP session initialization on port 3389', correct: false, note: 'Sysmon Event ID 10 tracks inter-process memory access, not network socket connections.' }
+            ]
+        },
+        {
+            telemetry: `[VELOCIRAPTOR VQL LIVE HUNT // WIN-WORKSTATION-04]
+Artifact: Windows.System.Pslist / Netstat / Hash
+SHA256: 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08
+ParentProcess: powershell.exe -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQA...
+OutboundSocket: 185.220.101.44:443 (ESTABLISHED)`,
+            question: 'Stage 2 — Live Endpoint Forensics: Which Velociraptor artifact confirms lateral movement risk before host isolation?',
+            options: [
+                { text: 'A) Collect Windows.Forensics.Prefetch, Windows.EventLogs.Evtx (4624/4648), and process memory', correct: true, note: 'Correct. Capturing volatile memory, Prefetch execution history, and Logon Type 3/9 events preserves evidence before containment.' },
+                { text: 'B) Reboot the endpoint immediately to terminate the malicious process', correct: false, note: 'Rebooting wipes volatile RAM, active C2 sockets, and unpersisted injected payloads.' },
+                { text: 'C) Delete C:\\Users\\Public\\svchost_update.exe while the process is still running', correct: false, note: 'Deleting the file on disk leaves the active C2 implant running in memory and destroys binary evidence.' }
+            ]
+        },
+        {
+            telemetry: `[CONTAINMENT & HARDENING // INCIDENT IR-2026-04]
+Status: Volatile artifacts & triage collection archived to DFIR share.
+Scope: Single compromised endpoint; no outbound SMB/WinRM lateral hits observed.`,
+            question: 'Stage 3 — Containment & Remediation: What is the proper sequence to close the incident?',
+            options: [
+                { text: 'A) Block C2 IP only and leave workstation connected for monitoring', correct: false, note: 'Leaving an uncontained host with dumped LSASS credentials risks pass-the-hash lateral movement.' },
+                { text: 'B) Quarantine host via Velociraptor/EDR, revoke & rotate exposed session credentials, block C2 IOCs, deploy WDAC/Credential Guard', correct: true, note: 'Complete. Host quarantine stops C2 egress, credential rotation invalidates dumped hashes, and Credential Guard prevents future LSASS reads.' },
+                { text: 'C) Format the Wazuh SIEM index to clear the Level 13 alert queue', correct: false, note: 'Clearing SIEM logs destroys audit trails required for root-cause analysis.' }
+            ]
+        }
+    ];
+
+    let step = 0;
+    const container = document.createElement('div');
+    container.className = 'triage-sim';
+    repoList.parentNode.insertBefore(container, repoList.nextSibling);
+
+    function renderStage() {
+        const current = stages[step];
+        container.innerHTML = `
+            <div class="triage-head">
+                <div class="triage-badge"><span class="sec-modal-dot"></span>INTERACTIVE LAB // SOC ALERT TRIAGE SIMULATOR</div>
+                <span class="triage-step-ind">STAGE 0${step + 1} / 0${stages.length}</span>
+            </div>
+            <pre class="triage-telemetry"></pre>
+            <div class="triage-prompt">${current.question}</div>
+            <div class="triage-options"></div>
+            <div class="triage-feedback" id="triageFeedback"></div>
+            <button type="button" class="triage-next" id="triageNext">${step < stages.length - 1 ? 'NEXT STAGE ->' : 'RESTART SCENARIO'}</button>
+        `;
+
+        container.querySelector('.triage-telemetry').textContent = current.telemetry;
+        const optWrap = container.querySelector('.triage-options');
+        const feedback = container.querySelector('#triageFeedback');
+        const nextBtn = container.querySelector('#triageNext');
+
+        current.options.forEach((opt) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'triage-opt';
+            btn.textContent = opt.text;
+            btn.addEventListener('click', () => {
+                optWrap.querySelectorAll('.triage-opt').forEach((b) => b.classList.remove('is-correct', 'is-wrong'));
+                btn.classList.add(opt.correct ? 'is-correct' : 'is-wrong');
+                feedback.textContent = opt.note;
+                if (opt.correct) {
+                    nextBtn.classList.add('visible');
+                }
+            });
+            optWrap.appendChild(btn);
+        });
+
+        nextBtn.addEventListener('click', () => {
+            step = (step + 1) % stages.length;
+            renderStage();
+        });
+    }
+
+    renderStage();
+})();

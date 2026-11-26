@@ -1056,3 +1056,118 @@ body.lang-fading [data-i18n] { opacity: 0.15; }
     font-size: 0.72rem;
     color: #8a8a8a;
 }
+
+/* Interactive 3-Step SOC Alert Triage Simulator */
+.triage-sim {
+    margin-top: 22px;
+    background: #141414;
+    border: 1px solid #262626;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.triage-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #262626;
+}
+
+.triage-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    color: #eaeaea;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.triage-step-ind {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: #8a8a8a;
+}
+
+.triage-telemetry {
+    background: #0f0f0f;
+    border: 1px solid #242424;
+    border-radius: 6px;
+    padding: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.74rem;
+    line-height: 1.55;
+    color: #d4d4d4;
+    margin-bottom: 14px;
+    white-space: pre-wrap;
+}
+
+.triage-prompt {
+    font-size: 0.88rem;
+    color: #eaeaea;
+    margin-bottom: 12px;
+}
+
+.triage-options {
+    display: grid;
+    gap: 8px;
+}
+
+.triage-opt {
+    text-align: left;
+    background: #191919;
+    border: 1px solid #262626;
+    border-radius: 6px;
+    padding: 10px 14px;
+    color: #d4d4d4;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.76rem;
+    cursor: pointer;
+    transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.triage-opt:hover {
+    border-color: #4a4a4a;
+    background: #1e1e1e;
+}
+
+.triage-opt.is-correct {
+    border-color: #2ea043;
+    background: rgba(46, 160, 67, 0.12);
+    color: #eaeaea;
+}
+
+.triage-opt.is-wrong {
+    border-color: #e30613;
+    background: rgba(227, 6, 19, 0.12);
+}
+
+.triage-feedback {
+    margin-top: 12px;
+    font-size: 0.82rem;
+    color: #a0a0a0;
+    line-height: 1.55;
+    min-height: 22px;
+}
+
+.triage-next {
+    margin-top: 12px;
+    background: #eaeaea;
+    color: #141414;
+    border: none;
+    border-radius: 5px;
+    padding: 7px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.74rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: none;
+}
+
+.triage-next.visible {
+    display: inline-block;
+}
