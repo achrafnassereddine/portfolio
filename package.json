@@ -1,0 +1,23 @@
+{
+  "name": "achraf-portfolio",
+  "version": "1.0.0",
+  "description": "Achraf Nasser-Eddine Cybersecurity Portfolio - SOC, DFIR & DevSecOps",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/achrafnassereddine/portfolio.git"
+  },
+  "keywords": ["cybersecurity", "portfolio", "soc", "dfir", "devsecops"],
+  "author": "Achraf Nasser-Eddine",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/achrafnassereddine/portfolio/issues"
+  },
+  "homepage": "https://github.com/achrafnassereddine/portfolio#readme",
+  "dependencies": {
+    "@vercel/analytics": "^2.0.1"
+  }
+}
