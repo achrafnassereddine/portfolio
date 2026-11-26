@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Vercel local artifacts
+.vercel/
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs
+npm-debug.log*
